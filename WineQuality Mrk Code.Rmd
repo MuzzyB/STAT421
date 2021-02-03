@@ -1,0 +1,426 @@
+---
+title: "Linear Regression Analysis Template"
+author: "Muuzaani Nkhoma"
+date: "March 6, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Read and prepare the data
+
+
+```{r 1a}
+winQ <- read.csv("\\Users\\muuza\\OneDrive\\Documents\\Muu\\St.CloudState\\Spring 18\\STAT421 Applied Regression Methods\\Group Project\\winequality-red.csv", header = TRUE)
+winQd <- data.frame(winQ)
+#jetmt <- data.matrix(jetd, rownames.force = NA)
+#jet.table <- write.table(jetmt)
+
+```
+
+### Instal Packages instal once before running the program and comment thereafter
+
+```{r 1b}
+library(car)
+library(MASS)
+library(perturb)
+library(pls)      # For Principal Component Regression
+```
+
+### # Plot Scatterplots to investigate the linear relationship between response and 
+# regressor variables
+
+```{r 1c}
+pairs(winQ)
+```
+
+
+# Test for correlation to get the values of the correlation between response and 
+# regressor variables
+
+```{r 1b}
+cor(winQ)
+#winQ$quality
+
+```
+
+###Fit the Full model with all regressor variables
+
+```{r 1c}
+winQ.model <- lm(quality~fixed.acidity + volatile.acidity + citric.acid + residual.sugar + chlorides + free.sulfur.dioxide + total.sulfur.dioxide + density + pH + sulphates + alcohol, data = winQ) 
+summary.lm(winQ.model)
+anova(winQ.model)
+winQ.model.fit = predict (winQ.model)
+winQ.model.res = residuals(winQ.model)
+winQ.model.stdres= rstudent(winQ.model)
+
+```
+
+
+##' calculate the predictive residuals
+
+
+```{r 1c}
+AIC(winQ.model)
+BIC(winQ.model)
+pr <- residuals(winQ.model)/(1-lm.influence(winQ.model)$hat)
+#' calculate the PRESS
+PRESS <- sum(pr^2)
+PRESS
+```
+
+
+###Checking multicollinearity for independent variables.
+
+
+```{r 1c}
+vif(winQ.model)
+vif(winQ.model) > 10 # problem
+print(colldiag(winQ.model))
+
+
+```
+
+
+####Model Diagnostics
+
+#Residual Analysis
+#Diagnostics Plot
+
+
+```{r 1c}
+layout(matrix(c(1,2,3,4),2,2)) # optional 4 graphs/page 
+plot(winQ.model)
+
+
+```
+
+#### Model and Variable Selection
+
+
+```{r 1c}
+
+#Stepwise Regression Model Selection
+step(lm(formula = quality ~ fixed.acidity + volatile.acidity + citric.acid + 
+    residual.sugar + chlorides + free.sulfur.dioxide + total.sulfur.dioxide + 
+    density + pH + sulphates + alcohol, data = winQ),direction="both")
+
+```
+```{r 1c}
+
+#Backward Regression Model Selection
+step(lm(formula = quality ~ fixed.acidity + volatile.acidity + citric.acid + 
+    residual.sugar + chlorides + free.sulfur.dioxide + total.sulfur.dioxide + 
+    density + pH + sulphates + alcohol, data = winQ),direction="backward")
+
+
+```
+
+
+```{r 1c}
+
+#Forward Regression Model Selection
+step(lm(formula = quality ~ fixed.acidity + volatile.acidity + citric.acid + 
+    residual.sugar + chlorides + free.sulfur.dioxide + total.sulfur.dioxide + 
+    density + pH + sulphates + alcohol, data = winQ),direction="forward")
+
+
+```
+#### Model and Variable Selection
+
+## All Subsets Regression
+
+
+```{r 1c}
+
+library(leaps)
+attach(winQ)
+leaps<-regsubsets(quality ~ fixed.acidity + volatile.acidity + citric.acid + 
+    residual.sugar + chlorides + free.sulfur.dioxide + total.sulfur.dioxide + 
+    density + pH + sulphates + alcohol, data = winQ, nbest=3)
+# view results 
+summary(leaps)
+
+```
+
+#### Analysis of Chosen Model
+# Chosen Models:
+
+```{r 1c}
+#1 From Scatterplots
+lm(MORT~PRECIP + EDUC + NONWHITE + SO2, data = airPd)
+#2 From Full Linear Regression
+lm(MORT~PRECIP + EDUC + NONWHITE + SO2, data = airPd)
+#3 From Stepwise Selection Process
+lm(formula = quality ~ volatile.acidity + chlorides + free.sulfur.dioxide + 
+    total.sulfur.dioxide + pH + sulphates + alcohol, data = winQ)
+#4 From Backward Selection Process
+lm(formula = quality ~ volatile.acidity + chlorides + free.sulfur.dioxide + 
+    total.sulfur.dioxide + pH + sulphates + alcohol, data = winQ)
+#5 From Forward Selection Process
+lm(formula = quality ~ fixed.acidity + volatile.acidity + citric.acid + 
+    residual.sugar + chlorides + free.sulfur.dioxide + total.sulfur.dioxide + 
+    density + pH + sulphates + alcohol, data = winQ)
+
+
+```
+
+### Candidate Model #1
+#From Stepwise Regressio 
+#lm(formula = quality ~ volatile.acidity + chlorides + free.sulfur.dioxide + 
+#   total.sulfur.dioxide + pH + sulphates + alcohol, data = winQ)
+# Fitting the model
+```{r 1c}
+win1.model <- lm(quality ~ volatile.acidity + chlorides + free.sulfur.dioxide + 
+    total.sulfur.dioxide + pH + sulphates + alcohol, data = winQ)  
+
+
+```
+
+#Summary 
+```{r 1c}
+
+summary.lm(win1.model)
+
+```
+
+
+```{r 1c}
+
+anova(win1.model)
+
+```
+
+
+```{r 1c}
+
+win1.model.fit = predict (win1.model)
+win1.model.res = residuals(win1.model)
+win1.model.stdres= rstudent(win1.model)
+
+```
+
+#### Model Performance Measures
+#Checking multicolinearity for independent variables.
+
+
+```{r 1c}
+vif(win1.model)
+vif(win1.model) # variance inflation factors 
+vif(win1.model) > 10 # problem?
+
+```
+####Model Diagnostics
+
+#Residual Analysis
+#Diagnostics Plots
+
+#Check for Residual Normality & Linearity
+```{r 1c}
+
+par(mfrow=c(1,2),oma=c(0,0,0,0))
+qqnorm(win1.model.res,pch=16)
+qqline(win1.model.res, col = 2)
+hist(win1.model.res, col="gray",xlab='Residual',main='Histogram of \nStudentized Residuals\nModel #1')
+
+```
+####Model Diagnostics
+
+#Residual Analysis
+#Diagnostics Plot
+
+#Check for Equal(Constant) Variance
+#Check for Outliers
+#Check for nonlinearity or other Patterns
+```{r 1c}
+par(mfrow=c(1,2),oma=c(0,0,0,0))
+plot(win1.model.res~win1.model.fit,pch=16,xlab='Fitted Value',ylab='studentized Residuals', 
+     main = "Studentized Residuals \nvs Fits Model #1")
+abline(h = 0)
+plot(win1.model.stdres~win1.model.fit,pch=16,xlab='Fitted Value',ylab='R-Student Residuals', 
+     main = "R-Student Residuals \nvs Fits Model #1")
+abline(h = 0)
+
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+
+```{r 1c}
+win1.model.infl <- influence.measures(win1.model)
+p1 = 8                #Number of regressor variables under consideration
+p1
+n1 = nrow(winQ)     #Number of Observations
+n1
+#Influential Diagnostics Summary
+summary(win1.model.infl) # only these
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#1 DFFITS (how much the regression function changes at the i-th case / 
+# observation when the  i -th case / observation is deleted.)
+# identify DFFITS values > 2/(sqrt(nrow(jetd))
+
+```{r 1c}
+cutoffdf1 =  2 /sqrt(p1/n1) 
+cutoffdf1
+win1.model.dfits = dffits(win1.model)
+plot(dffits(win1.model), pch=16, ylab="DFFITS")
+abline(h = cutoffdf1)
+
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#2 Cook's D  (how much the entire regression function changes when 
+# the i -th case is deleted)
+# identify D values > 4/(n-p-1) 
+
+```{r 1c}
+cutoffCD1 =  4/(n1-p1-1) 
+cutoffCD1
+plot(cooks.distance(win1.model), pch=20,  ylab="Cook's distance")
+abline(h = cutoffCD1)
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#3 DFBETAS plot (measures how much the coefficients change when the i-th case is deleted.)
+# identify DFBETS values > 2/(sqrt(nrow(jetd))
+
+```{r 1c}
+cutoffdb1 = 2 / sqrt(n1)
+cutoffdb1
+win1.model.dfb = dfbeta(win1.model, infl = lm.influence(win1.model, do.coef = TRUE))
+plot(dfbetas(win1.model), pch=20, ylab="DBETAS")
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#4 Leverage Points (regressor variable with the largest distance from the center of the centroid)
+# which observations 'are' influential X-Value Outliers
+# (2 * p) / n
+
+```{r 1c}
+cutoffhat1 = (2 * p1) / n1
+cutoffhat1
+plot(hatvalues(win1.model), pch=20, ylab='Hat values')
+abline(h = cutoffhat1)
+
+```
+####Model Diagnostics
+##Influential Analysis
+
+# OtherPlots of Influence
+
+```{r 1c}
+plot(rstudent(win1.model) ~ hatvalues(win1.model),pch=20, main = "R-Student Residuals \nvs Leverage Model #3") # recommended by some
+plot(win1.model,pch=20, which = 5) # an enhanced version of that via plot(<lm>)
+layout(matrix(c(1,2,3,4),2,2)) # optional 4 graphs/page 
+plot(win1.model)
+
+```
+####Model Diagnostics
+
+#Influential Diagnostics Output
+
+```{r 1c}
+
+win1.model.infl <- influence.measures(win1.model)
+win1.model.infl         # all
+
+```
+
+#Further Analysis
+#Check for added- Value/Marginal usefulenes of regressor variables
+
+
+```{r 1c}
+
+#Partial Regression Plots Model #1
+par(mfrow=c(1,2),oma=c(0,0,0,0))
+# Regress y on other regressors without candidate regressor
+jet3.model.x2 <- lm(formula = y ~ x3, data = jet)
+jet3.model.x3 <- lm(formula = y ~ x2 , data = jet)
+# Regress candidate regressor on other remaining regressors
+model.x2 <- lm(x2 ~ x3, data = methoxd)
+model.x3 <- lm(x3 ~ x2, data = methoxd)
+
+```
+
+#Partial Regression Plots Model #1
+
+```{r 1c}
+
+plot(resid(jet3.model.x2)~resid(model.x2), pch=16,
+     xlab = "residuals of x2 vs other x",
+     ylab = "residuals of y vs other x",
+     main = "Partial Regression \nPlot of \nModel #1 x2")
+abline(lm(resid(jet3.model.x2)~resid(model.x2)))
+
+plot(resid(jet3.model.x3)~resid(model.x3), pch=16,
+     xlab = "residuals of x3 vs other x",
+     ylab = "residuals of y vs other x",
+     main = "Partial Regression \nPlot of \nModel #1 x3")
+abline(lm(resid(jet3.model.x3)~resid(model.x3)))
+
+```
+
+# Dealing with Multicollinearity
+# Ridge Regression
+```{r 1c}
+
+lm.ridge(y~x1 + x2 + x3 + x4 + x5 + x6 , data = jet)
+plot(lm.ridge(y~x1 + x2 + x3 + x4 + x5 + x6 , data = jet,
+              lambda = seq(0,0.1,0.001)))
+select(lm.ridge(y~x1 + x2 + x3 + x4 + x5 + x6 , data = jet,
+                lambda = seq(0,0.1,0.0001)))
+#Ridge Model
+lm.ridge(y~x1 + x2 + x3 + x4 + x5 + x6 , data = jet, lambda = 0.0263)
+# Original Model
+lm(y~x1 + x2 + x3 + x4 + x5 + x6 , data = jet)
+
+```
+# Principal Component Regression
+```{r 1c}
+
+lm.ridge(y~x1 + x2 + x3 + x4 + x5 + x6 , data = jet)
+plot(lm.ridge(y~x1 + x2 + x3 + x4 + x5 + x6 , data = jet,
+              lambda = seq(0,0.1,0.001)))
+select(lm.ridge(y~x1 + x2 + x3 + x4 + x5 + x6 , data = jet,
+                lambda = seq(0,0.1,0.0001)))
+#Ridge Model
+lm.ridge(y~x1 + x2 + x3 + x4 + x5 + x6 , data = jet, lambda = 0.0263)
+# Original Model
+lm(y~x1 + x2 + x3 + x4 + x5 + x6 , data = jet)
+
+```
+
+
+#Others
+```{r 1c}
+N
+jet$x1
+jet[,2:3]
+n3 = nrow(jetd) 
+ncol(jet)
+jet[,c(3,5)]
+
+```

@@ -1,0 +1,1227 @@
+---
+title: "US Census County"
+author: "Muuzaani Nkhoma"
+date: "April 21, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Read and prepare the data
+
+
+```{r 1a}
+minnM <- read.csv("\\Users\\muuza\\OneDrive\\Documents\\Muu\\St.CloudState\\Spring 18\\STAT421 Applied Regression Methods\\Group Project\\minnCsWrk.csv", header = TRUE)
+minn <- na.omit(minnM)
+minnd <- data.frame(minn)
+minnmt <- data.matrix(minnd, rownames.force = NA)
+#minn.table <- write.table(minnmt)
+
+```
+
+### Instal Packages instal once before running the program and comment thereafter
+
+```{r 1b}
+library(car)
+library(MASS)
+library(perturb)
+#library(pls)      # For Principal Component Regression
+#library(locfit)
+library(caret)
+
+```
+# Test for correlation to get the values of the correlation between response and 
+# regressor variables
+
+```{r 1b}
+cor(minn)
+
+```
+
+###Fit the Full model with all regressor variables
+
+```{r 1c}
+minn.model <- lm(y~ ., data = minn) 
+
+```
+
+
+```{r 1c}
+
+summary.lm(minn.model)
+
+```
+
+
+```{r 1c}
+
+anova(minn.model)
+
+```
+
+
+```{r 1c}
+
+minn.model.fit = predict (minn.model)
+minn.model.res = residuals(minn.model)
+minn.model.stdres= rstudent(minn.model)
+
+```
+
+
+##' Calculate the predictive residuals in the Full Model
+
+
+```{r 1c}
+AIC(minn.model)
+
+```
+
+```{r 1c}
+
+BIC(minn.model)
+
+```
+
+#Press Statistic
+```{r 1c}
+pr <- residuals(minn.model)/(1-lm.influence(minn.model)$hat)
+#' calculate the PRESS
+PRESS <- sum(pr^2)
+PRESS
+
+```
+
+
+###Checking multicollinearity for independent variables in the Full Model.
+
+
+```{r 1c}
+
+vif(lm(y ~ . , data = minn))
+
+```
+
+
+```{r 1c}
+
+vif(minn.model) > 10 #Cutoff Point
+
+```
+###Eigensystem Analysis
+# Condition Number          < 100: No serious problem
+# 100<= condition number   < 1000: Moderate to strong multicollinerity
+# Condtion Number         >= 1000: Severe multicollinearity
+
+#At least one condition Index >= 1000 means near linear dependency
+
+```{r 1c}
+
+print(colldiag(minn.model))
+
+```
+
+
+#### Full Model Diagnostics
+
+#(Are all the conditions satisfied? LINE)
+#(What regressors seem important?)
+#(Any Possible Outliers?)
+#(Is there any need for transformation of response or regressor variables?)
+
+#Residual Analysis
+#Diagnostics Plot
+
+```{r 1c}
+
+layout(matrix(c(1,2,3,4),1,2)) # optional 2 graphs/page 
+plot(minn.model)
+
+```
+
+
+
+##### Model and Variable Selection
+### (To be performed if the number of variables is very large)
+### (Otherwise go straight to All Possible Regression )
+
+```{r 1c}
+
+#Stepwise Regression Model Selection
+step(lm(y~. , data = minn),direction="both")
+
+```
+
+
+```{r 1c}
+
+#Backward Regression Model Selection
+step(lm(y~. , data = minn),direction="backward")
+
+```
+
+
+```{r 1c}
+
+#Forward Regression Model Selection
+step(lm(y~. , data = minn),direction="forward")
+
+```
+
+
+###  Evaluate Subset Regression Models
+##   All Subsets Regression
+
+
+```{r 1c}
+
+
+library(leaps)
+attach(minn)
+minn.regsubsets <-regsubsets(y ~ ., data = minn,nbest=1, nvmax = 33)
+minn.regsubsets.summary   =summary(minn.regsubsets,all.best=TRUE,matrix=TRUE,matrix.logical=FALSE,df=NULL)
+
+names(minn.regsubsets.summary)
+
+
+```
+```{r 1c}
+
+minn.regsubsets.summary$outmat
+
+```
+
+
+```{r 1c}
+layout(matrix(1:1, ncol = 2))
+## Mallow Cp
+res.legend <- subsets(minn.regsubsets, statistic="cp", legend = FALSE, min.size = 1, main = "Mallow Cp")
+abline(a = 1, b = 1, lty = 2)
+
+```
+
+
+```{r 1c}
+layout(matrix(1:1, ncol = 2))
+## Adjusted R2
+res.legend <- subsets(minn.regsubsets, statistic="adjr2", legend = FALSE, min.size = 1, main = "Adjusted R^2")
+abline(a = 1, b = 1, lty = 2)
+
+```
+
+```{r 1c}
+plot(minn.regsubsets,scale="Cp")
+
+```
+
+```{r 1c}
+minn.regsubsets.summary$cp
+
+```
+
+```{r 1c}
+plot(minn.regsubsets,scale="adjr2")
+
+```
+
+```{r 1c}
+minn.regsubsets.summary$adjr2
+
+```
+```{r 1c, echo=TRUE}
+minn.regsubsets.summary$rss
+                
+```
+
+```{r 1c}
+minn.regsubsets.summary$bic
+
+```
+
+```{r 1c}
+minn.regsubsets.summary$rsq
+
+```
+```{r 1c}
+minn.regsubsets.summary$outmat[7, ]
+                
+```
+
+
+```{r 1c}
+minn.regsubsets.summary$cp[7]
+                
+```
+
+
+```{r 1c}
+minn.regsubsets.summary$adjr2[7]
+                
+```
+
+
+```{r 1c}
+minn.regsubsets.summary$rss[7]
+                
+```
+
+```{r 1c}
+minn.regsubsets.summary$bic[7]
+
+```
+
+```{r 1c}
+minn.regsubsets.summary$rsq[7]
+
+```
+
+
+
+
+##### Analysis of Individual Chosen Models
+# Chosen Models:
+
+
+#1 From All Possible Model Selection
+#   lm(formula = y ~ x3 + x12 + x14 + x16 + x18 + x24 + x31, data = minn)
+#2 From Stepwise Selection Process
+#   lm(formula = y ~ x2 + x6 + x9 + x10 + x12 + x13 + x14 + x16 + 
+#   x18 + x21 + x22 + x23 + x24 + x25 + x26 + x27 + x29 + x32, data = minn)
+#3 From Backward Selection Process
+#   lm(formula =  y ~ x2 + x6 + x9 + x10 + x12 + x13 + x14 + x16 + 
+#    x18 + x21 + x22 + x23 + x24 + x25 + x26 + x27 + x29, data = minn)
+
+
+
+
+### Candidate Model #1
+#  lm(formula = y ~ x3 + x12 + x14 + x16 + x18 + x24 + x31, data = minn)
+# Fitting the model
+```{r 1c}
+minn1.model <- lm( y ~ x3 + x12 + x14 + x16 + x18 + x24 + x31, data = minn)  
+
+```
+
+
+```{r 1c}
+
+summary.lm(minn1.model)
+
+```
+
+
+```{r 1c}
+
+anova(minn1.model)
+
+```
+
+
+```{r 1c}
+
+minn1.model.fit = predict (minn1.model)
+minn1.model.res = residuals(minn1.model)
+minn1.model.stdres= rstudent(minn1.model)
+
+```
+#### Model Performance Measures
+#Checking multicolinearity for independent variables.
+
+
+```{r 1c}
+vif(lm(minn1.model))
+vif(minn1.model) # variance inflation factors 
+vif(minn1.model) > 10 # problem?
+
+```
+####Model Diagnostics
+
+#Residual Analysis
+#Diagnostics Plots
+
+#Check for Residual Normality & Linearity
+```{r 1c}
+
+par(mfrow=c(1,2),oma=c(0,0,0,0))
+qqnorm(minn1.model.res,pch=16)
+qqline(minn1.model.res, col = 2)
+hist(minn1.model.res, col="gray",xlab='Residual',main='Histogram of \nStudentized Residuals Model #1')
+
+```
+####Model Diagnostics
+
+#Residual Analysis
+#Diagnostics Plot
+
+#Check for Equal(Constant) Variance
+#Check for Outliers
+#Check for nonlinearity or other Patterns
+```{r 1c}
+par(mfrow=c(1,2),oma=c(0,0,0,0))
+plot(minn1.model.res~minn1.model.fit,pch=16,xlab='Fitted Value',ylab='studentized Residuals', 
+     main = "Studentized Residuals \nvs Fits Model #1")
+abline(h = 0)
+plot(minn1.model.stdres~minn1.model.fit,pch=16,xlab='Fitted Value',ylab='R-Student Residuals', 
+     main = "R-Student Residuals \nvs Fits Model #1")
+abline(h = 0)
+
+
+```
+
+
+
+####Model Diagnostics
+##Influential Analysis
+
+
+```{r 1c}
+minn1.model.infl <- influence.measures(minn1.model)
+p1 = 7                #Number of regressor variables under consideration
+p1
+n1 = nrow(minn)     #Number of Observations
+n1
+#Influential Diagnostics Summary
+summary(minn1.model.infl) # only these
+
+```
+
+
+####Model Diagnostics
+##Influential Analysis
+
+#1 DFFITS (how much the regression function changes at the i-th case / 
+# observation when the  i -th case / observation is deleted.)
+# identify DFFITS values > 2/(sqrt(nrow(jetd))
+
+```{r 1c}
+cutoffdf1 =  2 /sqrt(p1/n1) 
+cutoffdf1
+minn1.model.dfits = dffits(minn1.model)
+plot(dffits(minn1.model), pch=16, ylab="DFFITS")
+abline(h = cutoffdf1)
+
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#2 Cook's D  (how much the entire regression function changes when 
+# the i -th case is deleted)
+# identify D values > 4/(n-p-1) 
+
+```{r 1c}
+cutoffCD1 =  4/(n1-p1-1) 
+cutoffCD1
+plot(cooks.distance(minn1.model), pch=20,  ylab="Cook's distance")
+abline(h = cutoffCD1)
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#3 DFBETAS plot (measures how much the coefficients change when the i-th case is deleted.)
+# identify DFBETS values > 2/(sqrt(nrow(jetd))
+
+```{r 1c}
+cutoffdb1 = 2 / sqrt(n1)
+cutoffdb1
+minn1.model.dfb = dfbeta(minn1.model, infl = lm.influence(minn1.model, do.coef = TRUE))
+plot(dfbetas(minn1.model), pch=20, ylab="DBETAS")
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#4 Leverage Points (regressor variable with the largest distance from the center of the centroid)
+# which observations 'are' influential X-Value Outliers
+# (2 * p) / n
+
+```{r 1c}
+cutoffhat1 = (2 * p1) / n1
+cutoffhat1
+plot(hatvalues(minn1.model), pch=20, ylab='Hat values')
+abline(h = cutoffhat1)
+
+```
+
+
+### Candidate Model #2
+#  y ~ x2 + x6 + x9 + x10 + x12 + x13 + x14 + x16 + 
+#    x18 + x21 + x22 + x23 + x24 + x25 + x26 + x27 + x29 + x32, 
+#    data = minn)
+# Fitting the model
+```{r 1c}
+minn2.model <- lm(y ~ x2 + x6 + x9 + x10 + x12 + x13 + x14 + x16 + 
+    x18 + x21 + x22 + x23 + x24 + x25 + x26 + x27 + x29 + x32, 
+    data = minn) 
+
+```
+
+
+```{r 1c}
+
+summary.lm(minn2.model)
+
+```
+
+
+```{r 1c}
+
+anova(minn2.model)
+
+```
+
+
+```{r 1c}
+
+minn2.model.fit = predict (minn2.model)
+minn2.model.res = residuals(minn2.model)
+minn2.model.stdres= rstudent(minn2.model)
+
+```
+#### Model Performance Measures
+#Checking multicolinearity for independent variables.
+
+
+```{r 1c}
+vif(lm(minn2.model))
+vif(minn2.model) # variance inflation factors 
+vif(minn2.model) > 10 # problem?
+
+```
+####Model Diagnostics
+
+#Residual Analysis
+#Diagnostics Plots
+
+#Check for Residual Normality & Linearity
+```{r 1c}
+
+par(mfrow=c(1,2),oma=c(0,0,0,0))
+qqnorm(minn2.model.res,pch=16)
+qqline(minn2.model.res, col = 2)
+hist(minn2.model.res, col="gray",xlab='Residual',main='Histogram of \nStudentized Residuals Model #2')
+
+```
+####Model Diagnostics
+
+#Residual Analysis
+#Diagnostics Plot
+
+#Check for Equal(Constant) Variance
+#Check for Outliers
+#Check for nonlinearity or other Patterns
+```{r 1c}
+par(mfrow=c(1,2),oma=c(0,0,0,0))
+plot(minn2.model.res~minn2.model.fit,pch=16,xlab='Fitted Value',ylab='studentized Residuals', 
+     main = "Studentized Residuals \nvs Fits Model #2")
+abline(h = 0)
+plot(minn2.model.stdres~minn2.model.fit,pch=16,xlab='Fitted Value',ylab='R-Student Residuals', 
+     main = "R-Student Residuals \nvs Fits Model #2")
+abline(h = 0)
+
+
+```
+
+
+
+####Model Diagnostics
+##Influential Analysis
+
+
+```{r 1c}
+minn2.model.infl <- influence.measures(minn2.model)
+p2 = 18                #Number of regressor variables under consideration
+p2
+n2 = nrow(minn)     #Number of Observations
+n2
+#Influential Diagnostics Summary
+summary(minn2.model.infl) # only these
+```
+
+
+####Model Diagnostics
+##Influential Analysis
+
+#1 DFFITS (how much the regression function changes at the i-th case / 
+# observation when the  i -th case / observation is deleted.)
+# identify DFFITS values > 2/(sqrt(nrow(jetd))
+
+```{r 1c}
+cutoffdf2 =  2 /sqrt(p2/n2) 
+cutoffdf2
+minn2.model.dfits = dffits(minn2.model)
+plot(dffits(minn2.model), pch=16, ylab="DFFITS")
+abline(h = cutoffdf2)
+
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#2 Cook's D  (how much the entire regression function changes when 
+# the i -th case is deleted)
+# identify D values > 4/(n-p-1) 
+
+```{r 1c}
+cutoffCD2 =  4/(n2-p2-1) 
+cutoffCD2
+plot(cooks.distance(minn2.model), pch=20,  ylab="Cook's distance")
+abline(h = cutoffCD2)
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#3 DFBETAS plot (measures how much the coefficients change when the i-th case is deleted.)
+# identify DFBETS values > 2/(sqrt(nrow(jetd))
+
+```{r 1c}
+cutoffdb2 = 2 / sqrt(n2)
+cutoffdb2
+minn2.model.dfb = dfbeta(minn2.model, infl = lm.influence(minn2.model, do.coef = TRUE))
+plot(dfbetas(minn2.model), pch=20, ylab="DBETAS")
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#4 Leverage Points (regressor variable with the largest distance from the center of the centroid)
+# which observations 'are' influential X-Value Outliers
+# (2 * p) / n
+
+```{r 1c}
+cutoffhat2 = (2 * p2) / n2
+cutoffhat2
+plot(hatvalues(minn2.model), pch=20, ylab='Hat values')
+abline(h = cutoffhat2)
+
+```
+
+####Model Diagnostics
+
+#Influential Diagnostics Output
+
+```{r 1c}
+
+minn2.model.infl <- influence.measures(minn2.model)
+minn2.model.infl         # all
+
+```
+
+###### Candidate Model #3
+#  lm(formula =  x15 ~ x2 + x6 + x9 + x10 + x12 + x13 + x14 + x16 + 
+#    x18 + x21 + x22 + x23 + x24 + x25 + x26 + x27 + x29, data = minn)
+
+
+
+
+
+# Fitting the model
+```{r 1c}
+minn3.model <- lm( y ~ x2 + x6 + x9 + x10 + x12 + x13 + x14 + x16 + 
+    x18 + x21 + x22 + x23 + x24 + x25 + x26 + x27 + x29, data = minn)
+
+```
+
+
+```{r 1c}
+
+summary.lm(minn3.model)
+
+```
+
+
+```{r 1c}
+
+anova(minn3.model)
+
+```
+
+
+```{r 1c}
+
+minn3.model.fit = predict (minn3.model)
+minn3.model.res = residuals(minn3.model)
+minn3.model.stdres= rstudent(minn3.model)
+
+```
+#### Model Performance Measures
+#Checking multicolinearity for independent variables.
+
+
+```{r 1c}
+vif(lm(minn3.model))
+vif(minn3.model) # variance inflation factors 
+vif(minn3.model) > 10 # problem?
+
+```
+####Model Diagnostics
+
+#Residual Analysis
+#Diagnostics Plots
+
+#Check for Residual Normality & Linearity
+```{r 1c}
+
+par(mfrow=c(1,2),oma=c(0,0,0,0))
+qqnorm(minn3.model.res,pch=16)
+qqline(minn3.model.res, col = 2)
+hist(minn3.model.res, col="gray",xlab='Residual',main='Histogram of \nStudentized Residuals Model #3')
+
+```
+####Model Diagnostics
+
+#Residual Analysis
+#Diagnostics Plot
+
+#Check for Equal(Constant) Variance
+#Check for Outliers
+#Check for nonlinearity or other Patterns
+```{r 1c}
+par(mfrow=c(1,2),oma=c(0,0,0,0))
+plot(minn3.model.res~minn3.model.fit,pch=16,xlab='Fitted Value',ylab='studentized Residuals', 
+     main = "Studentized Residuals \nvs Fits Model #3")
+abline(h = 0)
+plot(minn3.model.stdres~minn3.model.fit,pch=16,xlab='Fitted Value',ylab='R-Student Residuals', 
+     main = "R-Student Residuals \nvs Fits Model #3")
+abline(h = 0)
+
+
+```
+
+
+
+####Model Diagnostics
+##Influential Analysis
+
+
+```{r 1c}
+minn3.model.infl <- influence.measures(minn3.model)
+p3 = 17                #Number of regressor variables under consideration
+p3
+n3 = nrow(minn)     #Number of Observations
+n3
+#Influential Diagnostics Summary
+summary(minn3.model.infl) # only these
+```
+
+
+####Model Diagnostics
+##Influential Analysis
+
+#1 DFFITS (how much the regression function changes at the i-th case / 
+# observation when the  i -th case / observation is deleted.)
+# identify DFFITS values > 2/(sqrt(nrow(jetd))
+
+```{r 1c}
+cutoffdf3 =  2 /sqrt(p3/n3) 
+cutoffdf3
+minn3.model.dfits = dffits(minn3.model)
+plot(dffits(minn3.model), pch=16, ylab="DFFITS")
+abline(h = cutoffdf3)
+
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#2 Cook's D  (how much the entire regression function changes when 
+# the i -th case is deleted)
+# identify D values > 4/(n-p-1) 
+
+```{r 1c}
+cutoffCD3=  4/(n3-p3-1) 
+cutoffCD3
+plot(cooks.distance(minn3.model), pch=20,  ylab="Cook's distance")
+abline(h = cutoffCD3)
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#3 DFBETAS plot (measures how much the coefficients change when the i-th case is deleted.)
+# identify DFBETS values > 2/(sqrt(nrow(jetd))
+
+```{r 1c}
+cutoffdb3 = 2 / sqrt(n3)
+cutoffdb3
+minn3.model.dfb = dfbeta(minn3.model, infl = lm.influence(minn3.model, do.coef = TRUE))
+plot(dfbetas(minn3.model), pch=20, ylab="DBETAS")
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#4 Leverage Points (regressor variable with the largest distance from the center of the centroid)
+# which observations 'are' influential X-Value Outliers
+# (2 * p) / n
+
+```{r 1c}
+cutoffhat3 = (2 * p3) / n3
+cutoffhat3
+plot(hatvalues(minn3.model), pch=20, ylab='Hat values')
+abline(h = cutoffhat3)
+
+```
+####Model Diagnostics
+####Model Diagnostics
+
+#Influential Diagnostics Output
+
+```{r 1c}
+
+minn3.model.infl <- influence.measures(minn3.model)
+minn3.model.infl         # all
+
+```
+####MODEL TRANSFORMATION
+
+##Box- Cox Method
+```{r 1c}
+
+boxcox(y ~ x3 + x12 + x14 + x16 + x18 + x24 + x31, data = minn,
+       lambda = seq(-1.5, 1.5, length = 10))
+
+
+```
+
+
+
+
+### Candidate Model #4 Transformed Model #1 with lambda = 0.93
+#  lm(formula = y ~ x3 + x12 + x14 + x16 + x18 + x24 + x31, data = minn)
+# Fitting the model
+```{r 1c}
+minn4.model <- lm( y^0.93 ~ x3 + x12 + x14 + x16 + x18 + x24 + x31, data = minn)  
+
+```
+
+
+```{r 1c}
+
+summary.lm(minn4.model)
+
+```
+
+
+```{r 1c}
+
+anova(minn4.model)
+
+```
+
+
+```{r 1c}
+
+minn4.model.fit = predict (minn4.model)
+minn4.model.res = residuals(minn4.model)
+minn4.model.stdres= rstudent(minn4.model)
+
+```
+#### Model Performance Measures
+#Checking multicolinearity for independent variables.
+
+
+```{r 1c}
+vif(lm(minn4.model))
+vif(minn4.model) # variance inflation factors 
+vif(minn4.model) > 10 # problem?
+
+```
+####Model Diagnostics
+
+#Residual Analysis
+#Diagnostics Plots
+
+#Check for Residual Normality & Linearity
+```{r 1c}
+
+par(mfrow=c(1,2),oma=c(0,0,0,0))
+qqnorm(minn4.model.res,pch=16)
+qqline(minn4.model.res, col = 2)
+hist(minn4.model.res, col="gray",xlab='Residual',main='Histogram of \nStudentized Residuals Model #4')
+
+```
+####Model Diagnostics
+
+#Residual Analysis
+#Diagnostics Plot
+
+#Check for Equal(Constant) Variance
+#Check for Outliers
+#Check for nonlinearity or other Patterns
+```{r 1c}
+par(mfrow=c(1,2),oma=c(0,0,0,0))
+plot(minn4.model.res~minn4.model.fit,pch=16,xlab='Fitted Value',ylab='studentized Residuals', 
+     main = "Studentized Residuals \nvs Fits Model #4")
+abline(h = 0)
+plot(minn4.model.stdres~minn1.model.fit,pch=16,xlab='Fitted Value',ylab='R-Student Residuals', 
+     main = "R-Student Residuals \nvs Fits Model #4")
+abline(h = 0)
+
+
+```
+
+
+
+####Model Diagnostics
+##Influential Analysis
+
+
+```{r 1c}
+minn4.model.infl <- influence.measures(minn4.model)
+p4 = 7                #Number of regressor variables under consideration
+p4
+n4 = nrow(minn)     #Number of Observations
+n4
+#Influential Diagnostics Summary
+summary(minn4.model.infl) # only these
+
+```
+
+
+####Model Diagnostics
+##Influential Analysis
+
+#1 DFFITS (how much the regression function changes at the i-th case / 
+# observation when the  i -th case / observation is deleted.)
+# identify DFFITS values > 2/(sqrt(nrow(jetd))
+
+```{r 1c}
+cutoffdf4 =  2 /sqrt(p4/n4) 
+cutoffdf4
+minn4.model.dfits = dffits(minn4.model)
+plot(dffits(minn4.model), pch=16, ylab="DFFITS")
+abline(h = cutoffdf4)
+
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#2 Cook's D  (how much the entire regression function changes when 
+# the i -th case is deleted)
+# identify D values > 4/(n-p-1) 
+
+```{r 1c}
+cutoffCD4 =  4/(n4-p4-1) 
+cutoffCD4
+plot(cooks.distance(minn4.model), pch=20,  ylab="Cook's distance")
+abline(h = cutoffCD4)
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#3 DFBETAS plot (measures how much the coefficients change when the i-th case is deleted.)
+# identify DFBETS values > 2/(sqrt(nrow(jetd))
+
+```{r 1c}
+cutoffdb4 = 2 / sqrt(n4)
+cutoffdb4
+minn4.model.dfb = dfbeta(minn4.model, infl = lm.influence(minn4.model, do.coef = TRUE))
+plot(dfbetas(minn4.model), pch=20, ylab="DBETAS")
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#4 Leverage Points (regressor variable with the largest distance from the center of the centroid)
+# which observations 'are' influential X-Value Outliers
+# (2 * p) / n
+
+```{r 1c}
+cutoffhat4 = (2 * p4) / n4
+cutoffhat4
+plot(hatvalues(minn4.model), pch=20, ylab='Hat values')
+abline(h = cutoffhat4)
+
+```
+### Candidate Model #5 with all demographic groups
+
+
+
+# lm(formula = y ~ x1 + x2 + x3 + x4 + x5 + x6 +x7 +x8 + x12 + x14 + x16 + x18 + x24 + x31, data = minn)
+# Fitting the model
+```{r 1c}
+minn5.model <- lm( y ~ x1 + x2 + x3 + x4 + x5 + x6 +x7 +x8 + x12 + x14 + x16 + x18 + x24 + x31, data = minn)  
+
+```
+
+
+```{r 1c}
+
+summary.lm(minn5.model)
+
+```
+
+
+```{r 1c}
+
+anova(minn5.model)
+
+```
+
+
+```{r 1c}
+
+minn5.model.fit = predict (minn5.model)
+minn5.model.res = residuals(minn5.model)
+minn5.model.stdres= rstudent(minn5.model)
+
+```
+#### Model Performance Measures
+#Checking multicolinearity for independent variables.
+
+
+```{r 1c}
+vif(lm(minn5.model))
+vif(minn5.model) # variance inflation factors 
+vif(minn5.model) > 10 # problem?
+
+```
+####Model Diagnostics
+
+#Residual Analysis
+#Diagnostics Plots
+
+#Check for Residual Normality & Linearity
+```{r 1c}
+
+par(mfrow=c(1,2),oma=c(0,0,0,0))
+qqnorm(minn5.model.res,pch=16)
+qqline(minn5.model.res, col = 2)
+hist(minn5.model.res, col="gray",xlab='Residual',main='Histogram of \nStudentized Residuals Model #5')
+
+```
+####Model Diagnostics
+
+#Residual Analysis
+#Diagnostics Plot
+
+#Check for Equal(Constant) Variance
+#Check for Outliers
+#Check for nonlinearity or other Patterns
+```{r 1c}
+par(mfrow=c(1,2),oma=c(0,0,0,0))
+plot(minn5.model.res~minn5.model.fit,pch=16,xlab='Fitted Value',ylab='studentized Residuals', 
+     main = "Studentized Residuals \nvs Fits Model #5")
+abline(h = 0)
+plot(minn5.model.stdres~minn5.model.fit,pch=16,xlab='Fitted Value',ylab='R-Student Residuals', 
+     main = "R-Student Residuals \nvs Fits Model #5")
+abline(h = 0)
+
+
+```
+
+
+
+####Model Diagnostics
+##Influential Analysis
+
+
+```{r 1c}
+minn5.model.infl <- influence.measures(minn5.model)
+p5 = 14                #Number of regressor variables under consideration
+p5
+n5 = nrow(minn)     #Number of Observations
+n5
+#Influential Diagnostics Summary
+summary(minn5.model.infl) # only these
+
+```
+
+
+####Model Diagnostics
+##Influential Analysis
+
+#1 DFFITS (how much the regression function changes at the i-th case / 
+# observation when the  i -th case / observation is deleted.)
+# identify DFFITS values > 2/(sqrt(nrow(jetd))
+
+```{r 1c}
+cutoffdf5 =  2 /sqrt(p5/n5) 
+cutoffdf5
+minn5.model.dfits = dffits(minn5.model)
+plot(dffits(minn5.model), pch=16, ylab="DFFITS")
+abline(h = cutoffdf5)
+
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#2 Cook's D  (how much the entire regression function changes when 
+# the i -th case is deleted)
+# identify D values > 4/(n-p-1) 
+
+```{r 1c}
+cutoffCD5 =  4/(n5-p5-1) 
+cutoffCD5
+plot(cooks.distance(minn5.model), pch=20,  ylab="Cook's distance")
+abline(h = cutoffCD5)
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#3 DFBETAS plot (measures how much the coefficients change when the i-th case is deleted.)
+# identify DFBETS values > 2/(sqrt(nrow(jetd))
+
+```{r 1c}
+cutoffdb5 = 2 / sqrt(n5)
+cutoffdb5
+minn5.model.dfb = dfbeta(minn5.model, infl = lm.influence(minn5.model, do.coef = TRUE))
+plot(dfbetas(minn5.model), pch=20, ylab="DBETAS")
+
+```
+
+####Model Diagnostics
+##Influential Analysis
+
+#4 Leverage Points (regressor variable with the largest distance from the center of the centroid)
+# which observations 'are' influential X-Value Outliers
+# (2 * p) / n
+
+```{r 1c}
+cutoffhat5 = (2 * p5) / n5
+cutoffhat5
+plot(hatvalues(minn5.model), pch=20, ylab='Hat values')
+abline(h = cutoffhat5)
+
+```
+
+
+###MODEL COMPARISON
+###Model Coefiecients and Predicted Values Analysis
+
+
+##Variance Inflation Factors (VIF)
+```{r 1c}
+
+vif(minn1.model) > 10 # variance inflation factors 
+vif(minn2.model) > 10 # variance inflation factors 
+vif(minn3.model) > 10 # variance inflation factors
+vif(minn4.model) > 10 # variance inflation factors
+vif(minn5.model) > 10 # variance inflation factors
+
+```
+#AIC
+
+```{r 1c}
+AIC(minn1.model) 
+AIC(minn2.model)
+AIC(minn3.model)
+AIC(minn4.model)
+AIC(minn5.model)
+
+```
+
+#BIC
+
+```{r 1c}
+BIC(minn1.model) 
+BIC(minn2.model)
+BIC(minn3.model)
+BIC(minn4.model)
+BIC(minn5.model)
+
+```
+##R-Squared
+
+```{r 1c}
+summary(minn1.model)$r.squared
+summary(minn2.model)$r.squared
+summary(minn3.model)$r.squared
+summary(minn4.model)$r.squared
+summary(minn5.model)$r.squared
+
+```
+##Adjusted R-Squared
+
+```{r 1c}
+summary(minn1.model)$adj.r.squared
+summary(minn2.model)$adj.r.squared
+summary(minn3.model)$adj.r.squared
+summary(minn4.model)$adj.r.squared
+summary(minn5.model)$adj.r.squared
+
+```
+##F-Statistic
+
+```{r 1c}
+summary(minn1.model)$fstatistic
+summary(minn2.model)$fstatistic
+summary(minn3.model)$fstatistic
+summary(minn4.model)$fstatistic
+summary(minn5.model)$fstatistic
+
+```
+
+##Press Statistic
+#Model #1
+```{r 1c}
+pr1 <- residuals(minn1.model)/(1-lm.influence(minn1.model)$hat)
+#' calculate the PRESS
+PRESS1 <- sum(pr1^2)
+PRESS1
+
+```
+#Model #2
+
+```{r 1c}
+pr2 <- residuals(minn2.model)/(1-lm.influence(minn2.model)$hat)
+#' calculate the PRESS
+PRESS2 <- sum(pr2^2)
+PRESS2
+
+```
+#Model #3
+
+```{r 1c}
+pr3 <- residuals(minn3.model)/(1-lm.influence(minn3.model)$hat)
+#' calculate the PRESS
+PRESS3 <- sum(pr3^2)
+PRESS3
+
+```
+#Model #4
+
+```{r 1c}
+pr4 <- residuals(minn4.model)/(1-lm.influence(minn4.model)$hat)
+#' calculate the PRESS
+PRESS4 <- sum(pr4^2)
+PRESS4
+
+```
+#Model #5
+
+```{r 1c}
+pr5 <- residuals(minn5.model)/(1-lm.influence(minn5.model)$hat)
+#' calculate the PRESS
+PRESS5 <- sum(pr5^2)
+PRESS5
+
+```
